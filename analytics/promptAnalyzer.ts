@@ -14,6 +14,19 @@ export interface PromptMetadata {
   keywords: string[];
   entities: string[];
   taskType: 'creative' | 'analytical' | 'informational' | 'technical' | 'mixed';
+  // New fields
+  sentiment: {
+    sentiment: 'positive' | 'neutral' | 'negative';
+    intensity: number;
+    emotionalTone: string[];
+    urgency: 'low' | 'medium' | 'high';
+  };
+  intent: {
+    primaryIntent: string;
+    secondaryIntents: string[];
+    confidence: number;
+    actionOriented: boolean;
+  };
 }
 
 // Define the interface for prompt alignment data
@@ -64,6 +77,10 @@ export class PromptAnalyzer {
     // Determine task type
     const taskType = this.determineTaskType(prompt);
     
+    // New analyses
+    const sentiment = this.analyzeSentiment(prompt);
+    const intent = this.classifyIntent(prompt);
+    
     return {
       originalPrompt: prompt,
       goals,
@@ -74,7 +91,10 @@ export class PromptAnalyzer {
       complexity,
       keywords,
       entities,
-      taskType
+      taskType,
+      // Add new fields
+      sentiment,
+      intent
     };
   }
 
@@ -513,6 +533,227 @@ export class PromptAnalyzer {
     }
     
     return Math.round(totalRelevance / aspects.length);
+  }
+
+  /**
+   * Analyzes the sentiment of the prompt
+   * @param prompt The prompt text
+   * @returns Sentiment analysis result
+   */
+  private analyzeSentiment(prompt: string): {
+    sentiment: 'positive' | 'neutral' | 'negative';
+    intensity: number; // 0-1 score
+    emotionalTone: string[];
+    urgency: 'low' | 'medium' | 'high';
+  } {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated NLP
+    
+    // Check for positive sentiment words
+    const positiveWords = [
+      'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic',
+      'helpful', 'beneficial', 'positive', 'success', 'successful',
+      'improve', 'improvement', 'better', 'best', 'like', 'love'
+    ];
+    
+    // Check for negative sentiment words
+    const negativeWords = [
+      'bad', 'terrible', 'awful', 'horrible', 'poor', 'negative',
+      'fail', 'failure', 'worse', 'worst', 'problem', 'issue',
+      'difficult', 'hard', 'trouble', 'dislike', 'hate'
+    ];
+    
+    // Check for emotional tone words
+    const emotionalTones: Record<string, string[]> = {
+      'excited': ['excited', 'exciting', 'thrilled', 'enthusiastic'],
+      'curious': ['curious', 'interested', 'intrigued', 'wondering'],
+      'frustrated': ['frustrated', 'annoyed', 'irritated', 'stuck'],
+      'concerned': ['concerned', 'worried', 'anxious', 'nervous'],
+      'hopeful': ['hopeful', 'optimistic', 'looking forward', 'anticipating'],
+      'confused': ['confused', 'unsure', 'uncertain', 'unclear']
+    };
+    
+    // Check for urgency indicators
+    const urgencyWords = [
+      'urgent', 'immediately', 'asap', 'quickly', 'soon',
+      'deadline', 'critical', 'important', 'priority'
+    ];
+    
+    const promptLower = prompt.toLowerCase();
+    const words = promptLower.split(/\s+/);
+    
+    // Count sentiment words
+    let positiveCount = 0;
+    let negativeCount = 0;
+    
+    for (const word of words) {
+      if (positiveWords.includes(word)) positiveCount++;
+      if (negativeWords.includes(word)) negativeCount++;
+    }
+    
+    // Determine overall sentiment
+    let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+    if (positiveCount > negativeCount + 1) {
+      sentiment = 'positive';
+    } else if (negativeCount > positiveCount + 1) {
+      sentiment = 'negative';
+    }
+    
+    // Calculate intensity
+    const totalSentimentWords = positiveCount + negativeCount;
+    const intensity = Math.min(1, totalSentimentWords / Math.max(10, words.length * 0.2));
+    
+    // Identify emotional tones
+    const detectedTones: string[] = [];
+    for (const [tone, toneWords] of Object.entries(emotionalTones)) {
+      if (toneWords.some(toneWord => promptLower.includes(toneWord))) {
+        detectedTones.push(tone);
+      }
+    }
+    
+    // Determine urgency
+    let urgency: 'low' | 'medium' | 'high' = 'low';
+    const urgencyCount = urgencyWords.filter(word => promptLower.includes(word)).length;
+    if (urgencyCount > 2) {
+      urgency = 'high';
+    } else if (urgencyCount > 0) {
+      urgency = 'medium';
+    }
+    
+    return {
+      sentiment,
+      intensity,
+      emotionalTone: detectedTones.length > 0 ? detectedTones : ['neutral'],
+      urgency
+    };
+  }
+
+  /**
+   * Classifies the intent of the prompt
+   * @param prompt The prompt text
+   * @returns Intent classification result
+   */
+  private classifyIntent(prompt: string): {
+    primaryIntent: string;
+    secondaryIntents: string[];
+    confidence: number; // 0-1 score
+    actionOriented: boolean;
+  } {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated NLP
+    
+    // Define intent patterns
+    const intentPatterns: Record<string, RegExp[]> = {
+      'get_information': [
+        /how (to|do|does|can|could|would|should)/i,
+        /what (is|are|was|were|will|would)/i,
+        /why (is|are|does|do|did)/i,
+        /tell me about/i,
+        /explain/i,
+        /describe/i,
+        /information on/i
+      ],
+      'solve_problem': [
+        /solve/i,
+        /fix/i,
+        /debug/i,
+        /issue/i,
+        /problem/i,
+        /error/i,
+        /not working/i,
+        /doesn't work/i,
+        /help me with/i
+      ],
+      'create_content': [
+        /create/i,
+        /generate/i,
+        /write/i,
+        /design/i,
+        /develop/i,
+        /build/i,
+        /make/i,
+        /produce/i
+      ],
+      'improve_content': [
+        /improve/i,
+        /enhance/i,
+        /optimize/i,
+        /refine/i,
+        /revise/i,
+        /edit/i,
+        /update/i,
+        /upgrade/i
+      ],
+      'analyze_content': [
+        /analyze/i,
+        /evaluate/i,
+        /assess/i,
+        /review/i,
+        /examine/i,
+        /investigate/i,
+        /study/i
+      ],
+      'compare_options': [
+        /compare/i,
+        /contrast/i,
+        /difference/i,
+        /versus/i,
+        /vs/i,
+        /better/i,
+        /best/i
+      ],
+      'opinion_request': [
+        /what do you think/i,
+        /your opinion/i,
+        /your thoughts/i,
+        /do you believe/i,
+        /would you recommend/i,
+        /suggest/i
+      ]
+    };
+    
+    // Check for action-oriented language
+    const actionVerbs = [
+      'do', 'make', 'create', 'build', 'generate', 'implement',
+      'develop', 'write', 'code', 'design', 'construct', 'produce'
+    ];
+    
+    // Count matches for each intent
+    const intentScores: Record<string, number> = {};
+    for (const [intent, patterns] of Object.entries(intentPatterns)) {
+      intentScores[intent] = 0;
+      for (const pattern of patterns) {
+        if (pattern.test(prompt)) {
+          intentScores[intent]++;
+        }
+      }
+    }
+    
+    // Sort intents by score
+    const sortedIntents = Object.entries(intentScores)
+      .sort((a, b) => b[1] - a[1])
+      .filter(([_, score]) => score > 0)
+      .map(([intent]) => intent);
+    
+    // Determine if action-oriented
+    const promptLower = prompt.toLowerCase();
+    const words = promptLower.split(/\s+/);
+    const actionOriented = actionVerbs.some(verb => words.includes(verb));
+    
+    // Calculate confidence based on score difference
+    let confidence = 0.5; // Default medium confidence
+    if (sortedIntents.length > 0) {
+      const topScore = intentScores[sortedIntents[0]];
+      const totalScore = Object.values(intentScores).reduce((sum, score) => sum + score, 0);
+      confidence = Math.min(0.95, topScore / Math.max(1, totalScore) * 0.8 + 0.2);
+    }
+    
+    return {
+      primaryIntent: sortedIntents.length > 0 ? sortedIntents[0] : 'unknown',
+      secondaryIntents: sortedIntents.slice(1, 3), // Top 2 secondary intents
+      confidence,
+      actionOriented
+    };
   }
 
   /**
