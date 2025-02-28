@@ -556,4 +556,482 @@ export class ContradictionDetector {
     
     return recommendations;
   }
+
+  /**
+   * Detects logical contradictions between statements
+   * @param statement1 The first statement
+   * @param statement2 The second statement
+   * @returns Contradiction details if found, null otherwise
+   */
+  private detectLogicalContradiction(statement1: string, statement2: string): string | null {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated logical analysis
+    
+    // Normalize statements
+    const norm1 = this.normalizeStatement(statement1);
+    const norm2 = this.normalizeStatement(statement2);
+    
+    // Check for direct negation
+    if (this.isDirectNegation(norm1, norm2)) {
+      return 'Direct logical negation detected';
+    }
+    
+    // Check for quantifier contradictions (all vs. some)
+    if (this.hasQuantifierContradiction(norm1, norm2)) {
+      return 'Quantifier contradiction detected (all vs. some)';
+    }
+    
+    // Check for temporal contradictions
+    if (this.hasTemporalContradiction(norm1, norm2)) {
+      return 'Temporal contradiction detected (before vs. after)';
+    }
+    
+    // Check for mutually exclusive categories
+    if (this.hasMutuallyExclusiveCategories(norm1, norm2)) {
+      return 'Mutually exclusive categories detected';
+    }
+    
+    return null;
+  }
+
+  /**
+   * Normalizes a statement for logical comparison
+   */
+  private normalizeStatement(statement: string): string {
+    return statement
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ') // Replace punctuation with space
+      .replace(/\s+/g, ' ')     // Normalize whitespace
+      .trim();
+  }
+
+  /**
+   * Checks if two statements are direct negations of each other
+   */
+  private isDirectNegation(statement1: string, statement2: string): boolean {
+    // Check for "not" negation
+    if (statement1.includes(' not ') && statement2.includes(statement1.replace(' not ', ' '))) {
+      return true;
+    }
+    if (statement2.includes(' not ') && statement1.includes(statement2.replace(' not ', ' '))) {
+      return true;
+    }
+    
+    // Check for "no" vs "some/all" negation
+    if ((statement1.startsWith('no ') || statement1.includes(' no ')) && 
+        statement2.replace(/\b(some|all)\b/g, 'no').includes(statement1)) {
+      return true;
+    }
+    if ((statement2.startsWith('no ') || statement2.includes(' no ')) && 
+        statement1.replace(/\b(some|all)\b/g, 'no').includes(statement2)) {
+      return true;
+    }
+    
+    // Check for common negation pairs
+    const negationPairs = [
+      ['always', 'never'],
+      ['everyone', 'no one'],
+      ['everything', 'nothing'],
+      ['all', 'none'],
+      ['must', 'must not'],
+      ['can', 'cannot'],
+      ['is', 'is not'],
+      ['will', 'will not'],
+      ['should', 'should not']
+    ];
+    
+    for (const [pos, neg] of negationPairs) {
+      // Check if statement1 contains positive and statement2 contains negative
+      if (statement1.includes(` ${pos} `) && statement2.includes(` ${neg} `)) {
+        // Extract context around the terms to ensure they're talking about the same thing
+        const context1 = this.extractContext(statement1, pos);
+        const context2 = this.extractContext(statement2, neg);
+        
+        if (this.contextOverlap(context1, context2)) {
+          return true;
+        }
+      }
+      
+      // Check the reverse
+      if (statement2.includes(` ${pos} `) && statement1.includes(` ${neg} `)) {
+        const context1 = this.extractContext(statement1, neg);
+        const context2 = this.extractContext(statement2, pos);
+        
+        if (this.contextOverlap(context1, context2)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Extracts context around a term in a statement
+   */
+  private extractContext(statement: string, term: string): string[] {
+    const words = statement.split(' ');
+    const termIndex = words.findIndex(word => word === term);
+    if (termIndex === -1) return [];
+    
+    // Extract 3 words before and after the term
+    const startIndex = Math.max(0, termIndex - 3);
+    const endIndex = Math.min(words.length - 1, termIndex + 3);
+    
+    return words.slice(startIndex, endIndex + 1).filter(word => word !== term);
+  }
+
+  /**
+   * Checks if two context arrays have significant overlap
+   */
+  private contextOverlap(context1: string[], context2: string[]): boolean {
+    // Count overlapping words
+    const overlap = context1.filter(word => context2.includes(word));
+    
+    // If more than 30% of words overlap, consider it significant
+    return overlap.length >= Math.min(context1.length, context2.length) * 0.3;
+  }
+
+  /**
+   * Checks for contradictions involving quantifiers (all, some, none)
+   */
+  private hasQuantifierContradiction(statement1: string, statement2: string): boolean {
+    // Check for "all" vs "none" contradictions
+    if ((statement1.includes(' all ') || statement1.startsWith('all ')) && 
+        (statement2.includes(' none ') || statement2.startsWith('none ') || 
+         statement2.includes(' no ') || statement2.startsWith('no '))) {
+      
+      // Extract the subject being quantified
+      const subject1 = this.extractSubjectAfterQuantifier(statement1, 'all');
+      const subject2 = this.extractSubjectAfterQuantifier(statement2, 'none') || 
+                      this.extractSubjectAfterQuantifier(statement2, 'no');
+      
+      if (subject1 && subject2 && this.areSubjectsSimilar(subject1, subject2)) {
+        return true;
+      }
+    }
+    
+    // Check the reverse
+    if ((statement2.includes(' all ') || statement2.startsWith('all ')) && 
+        (statement1.includes(' none ') || statement1.startsWith('none ') || 
+         statement1.includes(' no ') || statement1.startsWith('no '))) {
+      
+      const subject1 = this.extractSubjectAfterQuantifier(statement2, 'all');
+      const subject2 = this.extractSubjectAfterQuantifier(statement1, 'none') || 
+                      this.extractSubjectAfterQuantifier(statement1, 'no');
+      
+      if (subject1 && subject2 && this.areSubjectsSimilar(subject1, subject2)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Extracts the subject after a quantifier
+   */
+  private extractSubjectAfterQuantifier(statement: string, quantifier: string): string | null {
+    const regex = new RegExp(`\\b${quantifier}\\s+([\\w\\s]+?)\\b`, 'i');
+    const match = statement.match(regex);
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * Checks if two subjects are similar
+   */
+  private areSubjectsSimilar(subject1: string, subject2: string): boolean {
+    // Simple check for exact match or substring
+    if (subject1 === subject2) return true;
+    if (subject1.includes(subject2) || subject2.includes(subject1)) return true;
+    
+    // Check for word overlap
+    const words1 = subject1.split(' ');
+    const words2 = subject2.split(' ');
+    
+    // If they share significant words (nouns), consider them similar
+    const significantOverlap = words1.filter(word => 
+      word.length > 3 && words2.includes(word)
+    );
+    
+    return significantOverlap.length > 0;
+  }
+
+  /**
+   * Checks for temporal contradictions
+   */
+  private hasTemporalContradiction(statement1: string, statement2: string): boolean {
+    // Check for "before" vs "after" contradictions
+    if ((statement1.includes(' before ') && statement2.includes(' after ')) ||
+        (statement1.includes(' after ') && statement2.includes(' before '))) {
+      
+      // Extract events being temporally related
+      const events1 = this.extractTemporalEvents(statement1);
+      const events2 = this.extractTemporalEvents(statement2);
+      
+      // Check if the same events are mentioned in reverse order
+      if (events1 && events2 && 
+          events1.event1 === events2.event2 && 
+          events1.event2 === events2.event1) {
+        return true;
+      }
+    }
+    
+    // Check for other temporal contradictions (first/last, start/end)
+    const temporalPairs = [
+      ['first', 'last'],
+      ['start', 'end'],
+      ['begin', 'finish'],
+      ['earlier', 'later']
+    ];
+    
+    for (const [term1, term2] of temporalPairs) {
+      if ((statement1.includes(` ${term1} `) && statement2.includes(` ${term2} `)) ||
+          (statement1.includes(` ${term2} `) && statement2.includes(` ${term1} `))) {
+        
+        // Extract context to check if they're referring to the same event
+        const context1 = statement1.includes(term1) ? 
+          this.extractContext(statement1, term1) : 
+          this.extractContext(statement1, term2);
+        
+        const context2 = statement2.includes(term1) ? 
+          this.extractContext(statement2, term1) : 
+          this.extractContext(statement2, term2);
+        
+        if (this.contextOverlap(context1, context2)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Extracts events from a temporal statement
+   */
+  private extractTemporalEvents(statement: string): { event1: string; event2: string } | null {
+    // Extract "X before Y" or "X after Y"
+    const beforeMatch = statement.match(/(.+?)\s+before\s+(.+)/i);
+    if (beforeMatch) {
+      return { event1: beforeMatch[1].trim(), event2: beforeMatch[2].trim() };
+    }
+    
+    const afterMatch = statement.match(/(.+?)\s+after\s+(.+)/i);
+    if (afterMatch) {
+      return { event1: afterMatch[1].trim(), event2: afterMatch[2].trim() };
+    }
+    
+    return null;
+  }
+
+  /**
+   * Checks for mutually exclusive categories
+   */
+  private hasMutuallyExclusiveCategories(statement1: string, statement2: string): boolean {
+    // Define pairs of mutually exclusive categories
+    const exclusivePairs = [
+      ['required', 'optional'],
+      ['mandatory', 'voluntary'],
+      ['always', 'sometimes'],
+      ['never', 'sometimes'],
+      ['all', 'some'],
+      ['none', 'some'],
+      ['true', 'false'],
+      ['correct', 'incorrect'],
+      ['right', 'wrong'],
+      ['success', 'failure'],
+      ['increase', 'decrease'],
+      ['higher', 'lower'],
+      ['more', 'less'],
+      ['add', 'remove'],
+      ['include', 'exclude'],
+      ['enable', 'disable'],
+      ['start', 'stop']
+    ];
+    
+    for (const [cat1, cat2] of exclusivePairs) {
+      // Check if statements contain opposing categories
+      if ((statement1.includes(` ${cat1} `) && statement2.includes(` ${cat2} `)) ||
+          (statement1.includes(` ${cat2} `) && statement2.includes(` ${cat1} `))) {
+        
+        // Extract context to check if they're referring to the same subject
+        const context1 = statement1.includes(cat1) ? 
+          this.extractContext(statement1, cat1) : 
+          this.extractContext(statement1, cat2);
+        
+        const context2 = statement2.includes(cat1) ? 
+          this.extractContext(statement2, cat1) : 
+          this.extractContext(statement2, cat2);
+        
+        if (this.contextOverlap(context1, context2)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Detects factual inconsistencies across multiple thoughts
+   * @param thoughts Array of thoughts to analyze
+   * @returns Array of factual inconsistencies
+   */
+  public detectFactualInconsistencies(thoughts: ThoughtData[]): Array<{
+    fact1: { thoughtNumber: number; statement: string };
+    fact2: { thoughtNumber: number; statement: string };
+    explanation: string;
+  }> {
+    const inconsistencies: Array<{
+      fact1: { thoughtNumber: number; statement: string };
+      fact2: { thoughtNumber: number; statement: string };
+      explanation: string;
+    }> = [];
+    
+    // Extract factual statements from thoughts
+    const factualStatements: Array<{
+      thoughtNumber: number;
+      statement: string;
+      entities: string[];
+    }> = [];
+    
+    // Extract factual statements from each thought
+    thoughts.forEach(thought => {
+      const statements = this.extractFactualStatements(thought);
+      factualStatements.push(...statements.map(statement => ({
+        thoughtNumber: thought.thoughtNumber,
+        statement,
+        entities: this.extractEntities(statement)
+      })));
+    });
+    
+    // Compare factual statements for inconsistencies
+    for (let i = 0; i < factualStatements.length; i++) {
+      for (let j = i + 1; j < factualStatements.length; j++) {
+        const fact1 = factualStatements[i];
+        const fact2 = factualStatements[j];
+        
+        // Skip if statements are from the same thought
+        if (fact1.thoughtNumber === fact2.thoughtNumber) continue;
+        
+        // Check if statements refer to the same entities
+        const sharedEntities = fact1.entities.filter(entity => 
+          fact2.entities.includes(entity)
+        );
+        
+        if (sharedEntities.length > 0) {
+          // Check for logical contradictions
+          const contradiction = this.detectLogicalContradiction(fact1.statement, fact2.statement);
+          if (contradiction) {
+            inconsistencies.push({
+              fact1: { thoughtNumber: fact1.thoughtNumber, statement: fact1.statement },
+              fact2: { thoughtNumber: fact2.thoughtNumber, statement: fact2.statement },
+              explanation: `${contradiction} regarding ${sharedEntities.join(', ')}`
+            });
+          }
+        }
+      }
+    }
+    
+    return inconsistencies;
+  }
+
+  /**
+   * Extracts factual statements from a thought
+   */
+  private extractFactualStatements(thought: ThoughtData): string[] {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated NLP
+    
+    // Split thought into sentences
+    const sentences = thought.thought.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 0);
+    
+    // Filter for factual statements (declarative sentences without hedging)
+    const factualStatements = sentences.filter(sentence => {
+      // Skip questions
+      if (sentence.endsWith('?')) return false;
+      
+      // Skip sentences with hedging language
+      const hedgingWords = [
+        'might', 'may', 'could', 'possibly', 'perhaps', 'probably',
+        'seems', 'appears', 'likely', 'unlikely', 'sometimes',
+        'often', 'rarely', 'usually', 'generally', 'typically'
+      ];
+      
+      if (hedgingWords.some(word => sentence.toLowerCase().includes(` ${word} `))) {
+        return false;
+      }
+      
+      // Skip opinions
+      const opinionIndicators = [
+        'i think', 'i believe', 'in my opinion', 'i feel',
+        'i would', 'i suggest', 'i recommend', 'i prefer'
+      ];
+      
+      if (opinionIndicators.some(phrase => sentence.toLowerCase().includes(phrase))) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    return factualStatements;
+  }
+
+  /**
+   * Extracts entities from a statement
+   */
+  private extractEntities(statement: string): string[] {
+    // This is a simplified implementation
+    // In a real system, this would use named entity recognition
+    
+    // Look for capitalized words as potential entities
+    const words = statement.split(/\s+/);
+    const entities: string[] = [];
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i].replace(/[^\w]/g, '');
+      
+      // Check if word starts with capital letter and isn't at the beginning of the sentence
+      if (word.length > 0 && 
+          word[0] === word[0].toUpperCase() && 
+          word[0] !== word[0].toLowerCase() &&
+          i > 0) {
+        entities.push(word);
+      }
+    }
+    
+    // Add noun phrases (simplified)
+    const nounPhrases = this.extractNounPhrases(statement);
+    entities.push(...nounPhrases);
+    
+    return [...new Set(entities)]; // Remove duplicates
+  }
+
+  /**
+   * Extracts noun phrases from a statement (simplified)
+   */
+  private extractNounPhrases(statement: string): string[] {
+    // This is a very simplified implementation
+    // In a real system, this would use part-of-speech tagging
+    
+    const nounPhrases: string[] = [];
+    const words = statement.split(/\s+/);
+    
+    // Look for adjective + noun patterns
+    for (let i = 0; i < words.length - 1; i++) {
+      const word1 = words[i].replace(/[^\w]/g, '').toLowerCase();
+      const word2 = words[i + 1].replace(/[^\w]/g, '').toLowerCase();
+      
+      // Check if word2 is likely a noun (ends with common noun endings)
+      const likelyNoun = /(?:tion|ment|ity|ness|ance|ence|er|or|ism|ist|ing|ology|graphy)$/.test(word2);
+      
+      if (likelyNoun) {
+        nounPhrases.push(`${word1} ${word2}`);
+      }
+    }
+    
+    return nounPhrases;
+  }
 } 

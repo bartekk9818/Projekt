@@ -1,5 +1,10 @@
 import { ThoughtData } from '../types/ThoughtData.js';
 import { PromptMetadata } from '../analytics/promptAnalyzer.js';
+import { 
+  CognitiveModel, 
+  ReasoningFramework,
+  IntelligenceMaximizationRecommendations
+} from '../analytics/intelligenceMaximizationModule.js';
 import chalk from 'chalk';
 
 export class GraphRenderer {
@@ -464,5 +469,371 @@ export class GraphRenderer {
     const remainingThoughts = estimatedTotal - latestThought.thoughtNumber;
     
     return remainingThoughts;
+  }
+
+  /**
+   * Generates a visualization of cognitive models and their relationships to thoughts
+   */
+  public generateCognitiveModelVisualization(
+    thoughts: ThoughtData[], 
+    cognitiveModels: CognitiveModel[]
+  ): string {
+    const lines: string[] = [];
+    lines.push(chalk.cyan('\n=== Cognitive Model Visualization ===\n'));
+    
+    if (cognitiveModels.length === 0) {
+      lines.push('No cognitive models available for visualization.');
+      return lines.join('\n');
+    }
+    
+    // Display cognitive models
+    cognitiveModels.forEach(model => {
+      lines.push(chalk.yellow(`[${model.modelName}] (Applicability: ${model.applicability}/10)`));
+      lines.push(`  ${model.description}`);
+      
+      // Display strengths
+      lines.push(chalk.green('  Strengths:'));
+      model.strengths.forEach(strength => {
+        lines.push(`    • ${strength}`);
+      });
+      
+      // Display limitations
+      lines.push(chalk.red('  Limitations:'));
+      model.limitations.forEach(limitation => {
+        lines.push(`    • ${limitation}`);
+      });
+      
+      // Display recommended uses
+      lines.push(chalk.blue('  Recommended Uses:'));
+      model.recommendedUses.forEach(use => {
+        lines.push(`    • ${use}`);
+      });
+      
+      // Find thoughts that might benefit from this model
+      const relevantThoughts = thoughts
+        .filter(thought => this.isThoughtRelevantToModel(thought, model))
+        .slice(0, 3); // Limit to 3 most relevant thoughts
+      
+      if (relevantThoughts.length > 0) {
+        lines.push(chalk.magenta('  Relevant Thoughts:'));
+        relevantThoughts.forEach(thought => {
+          lines.push(`    • T${thought.thoughtNumber}: ${this.truncateText(thought.thought, 50)}`);
+        });
+      }
+      
+      lines.push(''); // Add spacing between models
+    });
+    
+    return lines.join('\n');
+  }
+
+  /**
+   * Determines if a thought is relevant to a cognitive model
+   */
+  private isThoughtRelevantToModel(thought: ThoughtData, model: CognitiveModel): boolean {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated matching
+    
+    // Check if thought phase matches model recommended uses
+    if (thought.phase) {
+      const phaseKeywords: Record<string, string[]> = {
+        'Planning': ['planning', 'preparation', 'strategy', 'design'],
+        'Analysis': ['analysis', 'evaluation', 'assessment', 'understanding'],
+        'Execution': ['implementation', 'execution', 'development', 'building'],
+        'Verification': ['testing', 'validation', 'verification', 'quality']
+      };
+      
+      const phaseWords = phaseKeywords[thought.phase] || [];
+      
+      // Check if any recommended uses contain phase-related words
+      for (const use of model.recommendedUses) {
+        if (phaseWords.some(word => use.toLowerCase().includes(word))) {
+          return true;
+        }
+      }
+    }
+    
+    // Check if thought content relates to model
+    const thoughtLower = thought.thought.toLowerCase();
+    const modelNameLower = model.modelName.toLowerCase();
+    const descriptionLower = model.description.toLowerCase();
+    
+    // Direct mention of model name or description keywords
+    if (thoughtLower.includes(modelNameLower)) {
+      return true;
+    }
+    
+    // Check for description keyword matches
+    const descriptionKeywords = descriptionLower
+      .split(/\s+/)
+      .filter(word => word.length > 4)
+      .slice(0, 5); // Take up to 5 significant keywords
+    
+    return descriptionKeywords.some(keyword => thoughtLower.includes(keyword));
+  }
+
+  /**
+   * Generates a visualization of reasoning frameworks and their applications
+   */
+  public generateReasoningFrameworkVisualization(
+    thoughts: ThoughtData[],
+    reasoningFrameworks: ReasoningFramework[]
+  ): string {
+    const lines: string[] = [];
+    lines.push(chalk.cyan('\n=== Reasoning Framework Visualization ===\n'));
+    
+    if (reasoningFrameworks.length === 0) {
+      lines.push('No reasoning frameworks available for visualization.');
+      return lines.join('\n');
+    }
+    
+    // Display reasoning frameworks
+    reasoningFrameworks.forEach(framework => {
+      lines.push(chalk.yellow(`[${framework.frameworkName}] (Applicability: ${framework.applicability}/10)`));
+      lines.push(`  ${framework.description}`);
+      
+      // Display key principles
+      lines.push(chalk.green('  Key Principles:'));
+      framework.keyPrinciples.forEach(principle => {
+        lines.push(`    • ${principle}`);
+      });
+      
+      // Display example applications
+      lines.push(chalk.blue('  Example Applications:'));
+      framework.exampleApplications.forEach(application => {
+        lines.push(`    • ${application}`);
+      });
+      
+      // Find thoughts that might benefit from this framework
+      const relevantThoughts = thoughts
+        .filter(thought => this.isThoughtRelevantToFramework(thought, framework))
+        .slice(0, 3); // Limit to 3 most relevant thoughts
+      
+      if (relevantThoughts.length > 0) {
+        lines.push(chalk.magenta('  Relevant Thoughts:'));
+        relevantThoughts.forEach(thought => {
+          lines.push(`    • T${thought.thoughtNumber}: ${this.truncateText(thought.thought, 50)}`);
+        });
+      }
+      
+      lines.push(''); // Add spacing between frameworks
+    });
+    
+    return lines.join('\n');
+  }
+
+  /**
+   * Determines if a thought is relevant to a reasoning framework
+   */
+  private isThoughtRelevantToFramework(thought: ThoughtData, framework: ReasoningFramework): boolean {
+    // This is a simplified implementation
+    // In a real system, this would use more sophisticated matching
+    
+    // Check if thought classification matches framework
+    if (thought.classification) {
+      const classificationKeywords: Record<string, string[]> = {
+        'hypothesis': ['scientific', 'hypothesis', 'testing', 'experiment'],
+        'observation': ['observation', 'data', 'evidence', 'empirical'],
+        'conclusion': ['conclusion', 'inference', 'deduction', 'reasoning'],
+        'question': ['question', 'inquiry', 'exploration', 'investigation'],
+        'solution': ['solution', 'implementation', 'application', 'design']
+      };
+      
+      const classWords = classificationKeywords[thought.classification] || [];
+      
+      // Check if framework name or principles contain classification-related words
+      if (classWords.some(word => framework.frameworkName.toLowerCase().includes(word))) {
+        return true;
+      }
+      
+      for (const principle of framework.keyPrinciples) {
+        if (classWords.some(word => principle.toLowerCase().includes(word))) {
+          return true;
+        }
+      }
+    }
+    
+    // Check if thought content relates to framework
+    const thoughtLower = thought.thought.toLowerCase();
+    const frameworkNameLower = framework.frameworkName.toLowerCase();
+    
+    // Direct mention of framework name
+    if (thoughtLower.includes(frameworkNameLower)) {
+      return true;
+    }
+    
+    // Check for principle keyword matches
+    for (const principle of framework.keyPrinciples) {
+      const principleKeywords = principle
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 4)
+        .slice(0, 3); // Take up to 3 significant keywords
+      
+      if (principleKeywords.some(keyword => thoughtLower.includes(keyword))) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Generates a comprehensive intelligence maximization dashboard
+   */
+  public generateIntelligenceDashboard(
+    thoughts: ThoughtData[],
+    promptMetadata?: PromptMetadata,
+    intelligenceRecommendations?: IntelligenceMaximizationRecommendations
+  ): string {
+    const lines: string[] = [];
+    lines.push(chalk.cyan('\n=== Intelligence Maximization Dashboard ===\n'));
+    
+    // Display prompt information if available
+    if (promptMetadata) {
+      lines.push(chalk.yellow('Prompt Analysis:'));
+      lines.push(`  Task Type: ${promptMetadata.taskType}`);
+      lines.push(`  Complexity: ${promptMetadata.complexity}`);
+      lines.push(`  Priority: ${promptMetadata.priority}`);
+      lines.push('');
+    }
+    
+    // Display thinking progress
+    const latestThought = thoughts.reduce((latest, current) => 
+      current.thoughtNumber > latest.thoughtNumber ? current : latest, 
+      thoughts[0]
+    );
+    
+    const progress = Math.round((latestThought.thoughtNumber / latestThought.totalThoughts) * 100);
+    const barWidth = 30;
+    const filledWidth = Math.floor(barWidth * (progress / 100));
+    const progressBar = '█'.repeat(filledWidth) + '░'.repeat(barWidth - filledWidth);
+    
+    lines.push(chalk.yellow('Thinking Progress:'));
+    lines.push(`  [${progressBar}] ${progress}%`);
+    lines.push(`  Current Phase: ${latestThought.phase || 'Unknown'}`);
+    lines.push('');
+    
+    // Display thought quality metrics
+    lines.push(chalk.yellow('Thought Quality Metrics:'));
+    
+    const qualityScores = thoughts
+      .filter(t => t.quality && t.quality.qualityScore !== undefined)
+      .map(t => t.quality!.qualityScore);
+    
+    if (qualityScores.length > 0) {
+      const avgQuality = qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length;
+      lines.push(`  Average Quality: ${avgQuality.toFixed(1)}/10`);
+      
+      // Quality trend
+      if (qualityScores.length >= 3) {
+        const recentScores = qualityScores.slice(-3);
+        const recentAvg = recentScores.reduce((sum, score) => sum + score, 0) / recentScores.length;
+        const earlierScores = qualityScores.slice(0, -3);
+        const earlierAvg = earlierScores.length > 0 ? 
+          earlierScores.reduce((sum, score) => sum + score, 0) / earlierScores.length : recentAvg;
+        
+        const trend = recentAvg > earlierAvg ? 'Improving' : 
+                     recentAvg < earlierAvg ? 'Declining' : 'Stable';
+        
+        lines.push(`  Quality Trend: ${trend}`);
+      }
+    } else {
+      lines.push('  No quality metrics available');
+    }
+    lines.push('');
+    
+    // Display prompt alignment if available
+    const alignmentScores = thoughts
+      .filter(t => t.promptAlignment !== undefined)
+      .map(t => t.promptAlignment as number);
+    
+    if (alignmentScores.length > 0) {
+      const avgAlignment = alignmentScores.reduce((sum, score) => sum + score, 0) / alignmentScores.length;
+      lines.push(chalk.yellow('Prompt Alignment:'));
+      lines.push(`  Average Alignment: ${avgAlignment.toFixed(1)}/10`);
+      
+      // Count thoughts by alignment level
+      const highAligned = alignmentScores.filter(score => score >= 7).length;
+      const mediumAligned = alignmentScores.filter(score => score >= 4 && score < 7).length;
+      const lowAligned = alignmentScores.filter(score => score < 4).length;
+      
+      lines.push(`  High Alignment: ${highAligned} thoughts`);
+      lines.push(`  Medium Alignment: ${mediumAligned} thoughts`);
+      lines.push(`  Low Alignment: ${lowAligned} thoughts`);
+      lines.push('');
+    }
+    
+    // Display intelligence recommendations if available
+    if (intelligenceRecommendations) {
+      // Display cognitive biases
+      if (intelligenceRecommendations.cognitiveBiases && 
+          intelligenceRecommendations.cognitiveBiases.length > 0) {
+        lines.push(chalk.yellow('Potential Cognitive Biases:'));
+        intelligenceRecommendations.cognitiveBiases
+          .sort((a, b) => b.likelihood - a.likelihood)
+          .slice(0, 3) // Show top 3
+          .forEach(bias => {
+            const likelihood = Math.round(bias.likelihood * 10);
+            lines.push(`  • ${bias.biasType} (${likelihood}/10): ${bias.description}`);
+          });
+        lines.push('');
+      }
+      
+      // Display metacognitive strategies
+      if (intelligenceRecommendations.metacognitiveStrategies && 
+          intelligenceRecommendations.metacognitiveStrategies.length > 0) {
+        lines.push(chalk.yellow('Recommended Metacognitive Strategies:'));
+        intelligenceRecommendations.metacognitiveStrategies
+          .slice(0, 3) // Show top 3
+          .forEach(strategy => {
+            lines.push(`  • ${strategy.strategyName}: ${strategy.description}`);
+          });
+        lines.push('');
+      }
+      
+      // Display focus areas
+      if (intelligenceRecommendations.focusAreas && 
+          intelligenceRecommendations.focusAreas.length > 0) {
+        lines.push(chalk.yellow('Recommended Focus Areas:'));
+        intelligenceRecommendations.focusAreas.forEach(area => {
+          lines.push(`  • ${area}`);
+        });
+        lines.push('');
+      }
+      
+      // Display mental models if available
+      if (intelligenceRecommendations.mentalModels && 
+          intelligenceRecommendations.mentalModels.length > 0) {
+        lines.push(chalk.yellow('Recommended Mental Models:'));
+        intelligenceRecommendations.mentalModels.forEach(model => {
+          lines.push(`  • ${model.modelName}: ${model.description}`);
+        });
+        lines.push('');
+      }
+    }
+    
+    // Display thought pattern analysis
+    const thoughtsByPhase: Record<string, number> = {
+      'Planning': 0,
+      'Analysis': 0,
+      'Execution': 0,
+      'Verification': 0
+    };
+    
+    thoughts.forEach(thought => {
+      if (thought.phase) {
+        thoughtsByPhase[thought.phase]++;
+      }
+    });
+    
+    lines.push(chalk.yellow('Thought Distribution by Phase:'));
+    Object.entries(thoughtsByPhase).forEach(([phase, count]) => {
+      const percentage = Math.round((count / thoughts.length) * 100);
+      const phaseBar = '█'.repeat(Math.floor(percentage / 5)) + '░'.repeat(20 - Math.floor(percentage / 5));
+      lines.push(`  ${phase.padEnd(12)} [${phaseBar}] ${count} (${percentage}%)`);
+    });
+    
+    return lines.join('\n') + '\n';
   }
 } 

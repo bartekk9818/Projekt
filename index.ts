@@ -666,6 +666,37 @@ class SequentialThinkingServer {
         }
       }
 
+      // Generate new advanced visualizations
+      if (validatedInput.intelligenceRecommendations) {
+        // Generate cognitive model visualization if available
+        if (validatedInput.intelligenceRecommendations.cognitiveModels && 
+            validatedInput.intelligenceRecommendations.cognitiveModels.length > 0) {
+          const cognitiveModelViz = this.graphRenderer.generateCognitiveModelVisualization(
+            this.thoughtHistory,
+            validatedInput.intelligenceRecommendations.cognitiveModels
+          );
+          console.error(cognitiveModelViz);
+        }
+        
+        // Generate reasoning framework visualization if available
+        if (validatedInput.intelligenceRecommendations.reasoningFrameworks && 
+            validatedInput.intelligenceRecommendations.reasoningFrameworks.length > 0) {
+          const reasoningFrameworkViz = this.graphRenderer.generateReasoningFrameworkVisualization(
+            this.thoughtHistory,
+            validatedInput.intelligenceRecommendations.reasoningFrameworks
+          );
+          console.error(reasoningFrameworkViz);
+        }
+        
+        // Generate intelligence dashboard
+        const intelligenceDashboard = this.graphRenderer.generateIntelligenceDashboard(
+          this.thoughtHistory,
+          this.promptContext.isInitialized() ? this.promptContext.getMetadata() : undefined,
+          validatedInput.intelligenceRecommendations
+        );
+        console.error(intelligenceDashboard);
+      }
+
       // Calculate progress
       const progress = (validatedInput.thoughtNumber / validatedInput.totalThoughts) * 100;
       const progressBar = this.createProgressBar(progress);
@@ -723,6 +754,11 @@ class SequentialThinkingServer {
             metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies,
             adaptiveSuggestions: validatedInput.intelligenceRecommendations?.adaptiveSuggestions,
             insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts,
+            // New advanced intelligence features
+            cognitiveModels: validatedInput.intelligenceRecommendations?.cognitiveModels,
+            reasoningFrameworks: validatedInput.intelligenceRecommendations?.reasoningFrameworks,
+            decisionStrategies: validatedInput.intelligenceRecommendations?.decisionStrategies,
+            mentalModels: validatedInput.intelligenceRecommendations?.mentalModels,
             // Prompt progress data
             promptProgress: this.promptContext.isInitialized() && this.promptContext.getMetadata() ? {
               overallProgress: this.calculateOverallProgress(),

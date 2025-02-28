@@ -85,6 +85,25 @@ export interface ThoughtPatternAnalysis {
   patternEvolution: 'improving' | 'stable' | 'narrowing';
 }
 
+// Advanced cognitive model interface
+export interface CognitiveModel {
+  modelName: string;
+  description: string;
+  applicability: number; // 0-10 score
+  strengths: string[];
+  limitations: string[];
+  recommendedUses: string[];
+}
+
+// Advanced reasoning framework interface
+export interface ReasoningFramework {
+  frameworkName: string;
+  description: string;
+  applicability: number; // 0-10 score
+  keyPrinciples: string[];
+  exampleApplications: string[];
+}
+
 // Intelligence maximization recommendations
 export interface IntelligenceMaximizationRecommendations {
   strategies: StrategyRecommendation[];
@@ -100,6 +119,21 @@ export interface IntelligenceMaximizationRecommendations {
   insightGenerationPrompts: string[];
   adaptiveLearningRecommendations: AdaptiveLearningRecommendation[];
   thoughtPatternAnalysis?: ThoughtPatternAnalysis; // Optional as it requires multiple thoughts
+  // New advanced fields
+  cognitiveModels: CognitiveModel[];
+  reasoningFrameworks: ReasoningFramework[];
+  decisionStrategies: Array<{
+    strategyName: string;
+    description: string;
+    applicability: number;
+    decisionFactors: string[];
+  }>;
+  mentalModels: Array<{
+    modelName: string;
+    description: string;
+    applicability: number;
+    exampleApplication: string;
+  }>;
 }
 
 export class IntelligenceMaximizationModule {
@@ -155,6 +189,12 @@ export class IntelligenceMaximizationModule {
       ? this.analyzeThoughtPatterns(previousThoughts, promptMetadata)
       : undefined;
     
+    // New advanced recommendations
+    const cognitiveModels = this.recommendCognitiveModels(promptMetadata, phase);
+    const reasoningFrameworks = this.recommendReasoningFrameworks(promptMetadata, phase);
+    const decisionStrategies = this.recommendDecisionStrategies(promptMetadata, currentThoughtNumber, totalThoughts);
+    const mentalModels = this.recommendMentalModels(promptMetadata, phase);
+    
     return {
       strategies,
       reasoningTypes,
@@ -167,7 +207,12 @@ export class IntelligenceMaximizationModule {
       adaptiveSuggestions,
       insightGenerationPrompts,
       adaptiveLearningRecommendations,
-      thoughtPatternAnalysis
+      thoughtPatternAnalysis,
+      // Add new fields
+      cognitiveModels,
+      reasoningFrameworks,
+      decisionStrategies,
+      mentalModels
     };
   }
 
@@ -1914,5 +1959,487 @@ export class IntelligenceMaximizationModule {
     }
     
     return shifts;
+  }
+  /**
+   * Recommends cognitive models based on prompt metadata and phase
+   */
+  private recommendCognitiveModels(
+    promptMetadata: PromptMetadata,
+    phase?: 'Planning' | 'Analysis' | 'Execution' | 'Verification'
+  ): CognitiveModel[] {
+    const models: CognitiveModel[] = [];
+    
+    // Add task-specific cognitive models
+    switch (promptMetadata.taskType) {
+      case 'creative':
+        models.push({
+          modelName: 'Divergent-Convergent Thinking',
+          description: 'Alternating between generating many possibilities and narrowing down to the best options',
+          applicability: 9,
+          strengths: ['Encourages exploration of many options', 'Balances creativity with practicality'],
+          limitations: ['Can be time-consuming', 'Requires discipline to switch between modes'],
+          recommendedUses: ['Brainstorming sessions', 'Design challenges', 'Problem reframing']
+        });
+        
+        models.push({
+          modelName: 'Associative Network Model',
+          description: 'Forming connections between seemingly unrelated concepts to generate novel ideas',
+          applicability: 8,
+          strengths: ['Produces unexpected combinations', 'Breaks conventional thinking patterns'],
+          limitations: ['Can lead to impractical ideas', 'Effectiveness varies with domain knowledge'],
+          recommendedUses: ['Generating novel solutions', 'Breaking creative blocks', 'Conceptual innovation']
+        });
+        break;
+        
+      case 'analytical':
+        models.push({
+          modelName: 'Bayesian Reasoning',
+          description: 'Updating beliefs based on new evidence using probability theory principles',
+          applicability: 9,
+          strengths: ['Handles uncertainty well', 'Provides framework for evidence evaluation', 'Reduces cognitive biases'],
+          limitations: ['Requires quantification of beliefs', 'Can be computationally intensive'],
+          recommendedUses: ['Hypothesis testing', 'Risk assessment', 'Decision making under uncertainty']
+        });
+        
+        models.push({
+          modelName: 'Causal Network Analysis',
+          description: 'Mapping cause-effect relationships to understand system behavior',
+          applicability: 8,
+          strengths: ['Reveals hidden dependencies', 'Supports intervention planning', 'Identifies leverage points'],
+          limitations: ['Difficult to validate causal links', 'Can oversimplify complex systems'],
+          recommendedUses: ['Root cause analysis', 'Impact assessment', 'System optimization']
+        });
+        break;
+        
+      case 'technical':
+        models.push({
+          modelName: 'Hierarchical Problem Decomposition',
+          description: 'Breaking complex problems into nested sub-problems with clear dependencies',
+          applicability: 9,
+          strengths: ['Manages complexity effectively', 'Creates clear work breakdown', 'Supports parallel processing'],
+          limitations: ['May miss cross-cutting concerns', 'Requires clear problem boundaries'],
+          recommendedUses: ['Software architecture', 'Project planning', 'Algorithm design']
+        });
+        
+        models.push({
+          modelName: 'Design Pattern Recognition',
+          description: 'Identifying and applying established solution patterns to technical problems',
+          applicability: 8,
+          strengths: ['Leverages proven solutions', 'Provides common vocabulary', 'Accelerates problem solving'],
+          limitations: ['Can lead to over-engineering', 'Requires pattern knowledge'],
+          recommendedUses: ['Software design', 'Architecture planning', 'System integration']
+        });
+        break;
+        
+      case 'informational':
+        models.push({
+          modelName: 'Information Hierarchy Model',
+          description: 'Organizing information in levels from general to specific with clear relationships',
+          applicability: 9,
+          strengths: ['Improves information accessibility', 'Supports progressive disclosure', 'Clarifies relationships'],
+          limitations: ['Can oversimplify complex topics', 'Requires clear categorization'],
+          recommendedUses: ['Content organization', 'Knowledge base design', 'Educational material']
+        });
+        break;
+    }
+    
+    // Add phase-specific cognitive models
+    if (phase) {
+      switch (phase) {
+        case 'Planning':
+          models.push({
+            modelName: 'Scenario Planning',
+            description: 'Developing multiple future scenarios to prepare for different possibilities',
+            applicability: 8,
+            strengths: ['Improves adaptability', 'Identifies key uncertainties', 'Prevents tunnel vision'],
+            limitations: ['Can be resource intensive', 'Difficult to determine scenario probabilities'],
+            recommendedUses: ['Strategic planning', 'Risk management', 'Contingency planning']
+          });
+          break;
+          
+        case 'Analysis':
+          models.push({
+            modelName: 'Multi-perspective Analysis',
+            description: 'Examining a problem from multiple stakeholder or disciplinary perspectives',
+            applicability: 8,
+            strengths: ['Reveals blind spots', 'Generates comprehensive understanding', 'Reduces bias'],
+            limitations: ['Can be time-consuming', 'Requires diverse knowledge'],
+            recommendedUses: ['Complex problem analysis', 'Stakeholder management', 'Interdisciplinary challenges']
+          });
+          break;
+          
+        case 'Execution':
+          models.push({
+            modelName: 'Implementation Mapping',
+            description: 'Creating detailed execution plans with dependencies, resources, and milestones',
+            applicability: 8,
+            strengths: ['Clarifies execution steps', 'Identifies resource needs', 'Supports tracking'],
+            limitations: ['Can become outdated quickly', 'May create false sense of certainty'],
+            recommendedUses: ['Project implementation', 'Process design', 'Resource allocation']
+          });
+          break;
+          
+        case 'Verification':
+          models.push({
+            modelName: 'Falsification Testing',
+            description: 'Actively trying to disprove assumptions and find flaws in solutions',
+            applicability: 9,
+            strengths: ['Identifies weaknesses proactively', 'Improves solution robustness', 'Reduces confirmation bias'],
+            limitations: ['Can create negative mindset', 'Requires intellectual honesty'],
+            recommendedUses: ['Solution validation', 'Quality assurance', 'Critical review']
+          });
+          break;
+      }
+    }
+    
+    // Add complexity-specific models
+    if (promptMetadata.complexity === 'complex') {
+      models.push({
+        modelName: 'Systems Thinking',
+        description: 'Analyzing problems in terms of interconnected elements, feedback loops, and emergent properties',
+        applicability: 9,
+        strengths: ['Reveals emergent behaviors', 'Identifies leverage points', 'Prevents reductionist thinking'],
+        limitations: ['Difficult to validate models', 'Can be overwhelming in scope'],
+        recommendedUses: ['Complex problem solving', 'Organizational change', 'Policy development']
+      });
+    }
+    
+    return models.slice(0, 3); // Return top 3 models
+  }
+
+  /**
+   * Recommends reasoning frameworks based on prompt metadata and phase
+   */
+  private recommendReasoningFrameworks(
+    promptMetadata: PromptMetadata,
+    phase?: 'Planning' | 'Analysis' | 'Execution' | 'Verification'
+  ): ReasoningFramework[] {
+    const frameworks: ReasoningFramework[] = [];
+    
+    // Add task-specific reasoning frameworks
+    switch (promptMetadata.taskType) {
+      case 'creative':
+        frameworks.push({
+          frameworkName: 'Design Thinking',
+          description: 'Human-centered approach to innovation that integrates user needs, technological possibilities, and business requirements',
+          applicability: 9,
+          keyPrinciples: ['Empathize with users', 'Define problems clearly', 'Ideate multiple solutions', 'Prototype rapidly', 'Test with users'],
+          exampleApplications: ['Product design', 'Service innovation', 'Experience design']
+        });
+        break;
+        
+      case 'analytical':
+        frameworks.push({
+          frameworkName: 'Scientific Method',
+          description: 'Systematic approach to investigation involving observation, hypothesis formation, prediction, testing, and theory refinement',
+          applicability: 9,
+          keyPrinciples: ['Base on observable evidence', 'Form testable hypotheses', 'Design controlled experiments', 'Analyze data objectively', 'Refine theories based on results'],
+          exampleApplications: ['Research design', 'Data analysis', 'Hypothesis testing']
+        });
+        break;
+        
+      case 'technical':
+        frameworks.push({
+          frameworkName: 'First Principles Thinking',
+          description: 'Breaking down complex problems into basic elements and reassembling from the ground up',
+          applicability: 9,
+          keyPrinciples: ['Identify fundamental truths', 'Question assumptions', 'Build up from basics', 'Avoid reasoning by analogy'],
+          exampleApplications: ['Engineering design', 'Innovation in mature fields', 'Problem reformulation']
+        });
+        break;
+        
+      case 'informational':
+        frameworks.push({
+          frameworkName: 'Structured Knowledge Representation',
+          description: 'Organizing information using formal structures like taxonomies, ontologies, and semantic networks',
+          applicability: 8,
+          keyPrinciples: ['Define clear categories', 'Establish relationships', 'Maintain consistency', 'Support inference'],
+          exampleApplications: ['Knowledge base design', 'Information architecture', 'Content organization']
+        });
+        break;
+    }
+    
+    // Add general reasoning frameworks
+    frameworks.push({
+      frameworkName: 'Critical Thinking',
+      description: 'Disciplined approach to conceptualizing, analyzing, and evaluating information',
+      applicability: 8,
+      keyPrinciples: ['Question assumptions', 'Evaluate evidence quality', 'Consider alternative explanations', 'Recognize biases', 'Draw reasoned conclusions'],
+      exampleApplications: ['Argument evaluation', 'Source credibility assessment', 'Decision making']
+    });
+    
+    frameworks.push({
+      frameworkName: 'Systems Thinking',
+      description: 'Holistic approach that focuses on how system components interrelate and work over time within larger systems',
+      applicability: 7,
+      keyPrinciples: ['Identify system boundaries', 'Map interconnections', 'Recognize feedback loops', 'Consider emergent properties', 'Look for leverage points'],
+      exampleApplications: ['Complex problem analysis', 'Organizational design', 'Environmental planning']
+    });
+    
+    // Add phase-specific frameworks
+    if (phase) {
+      switch (phase) {
+        case 'Planning':
+          frameworks.push({
+            frameworkName: 'Backward Planning',
+            description: 'Starting with the end goal and working backward to identify necessary steps',
+            applicability: 8,
+            keyPrinciples: ['Define clear end state', 'Identify prerequisites for each step', 'Work backward from goal', 'Establish dependencies'],
+            exampleApplications: ['Project planning', 'Goal achievement', 'Strategy development']
+          });
+          break;
+          
+        case 'Analysis':
+          frameworks.push({
+            frameworkName: 'MECE Principle',
+            description: 'Mutually Exclusive, Collectively Exhaustive approach to problem breakdown',
+            applicability: 8,
+            keyPrinciples: ['Ensure categories don\'t overlap', 'Ensure all possibilities are covered', 'Create clear structure', 'Avoid gaps and redundancies'],
+            exampleApplications: ['Problem structuring', 'Option analysis', 'Comprehensive review']
+          });
+          break;
+          
+        case 'Execution':
+          frameworks.push({
+            frameworkName: 'Agile Methodology',
+            description: 'Iterative approach to implementation with continuous feedback and adaptation',
+            applicability: 8,
+            keyPrinciples: ['Deliver incrementally', 'Embrace change', 'Get frequent feedback', 'Adapt continuously'],
+            exampleApplications: ['Software development', 'Project management', 'Product delivery']
+          });
+          break;
+          
+        case 'Verification':
+          frameworks.push({
+            frameworkName: 'Red Team Analysis',
+            description: 'Adversarial approach to testing by actively trying to find flaws and weaknesses',
+            applicability: 8,
+            keyPrinciples: ['Adopt adversarial mindset', 'Challenge assumptions', 'Identify vulnerabilities', 'Test edge cases'],
+            exampleApplications: ['Security testing', 'Plan validation', 'Solution robustness testing']
+          });
+          break;
+      }
+    }
+    
+    return frameworks.slice(0, 2); // Return top 2 frameworks
+  }
+
+  /**
+   * Recommends decision strategies based on prompt metadata and progress
+   */
+  private recommendDecisionStrategies(
+    promptMetadata: PromptMetadata,
+    currentThoughtNumber: number,
+    totalThoughts: number
+  ): Array<{
+    strategyName: string;
+    description: string;
+    applicability: number;
+    decisionFactors: string[];
+  }> {
+    const strategies: Array<{
+      strategyName: string;
+      description: string;
+      applicability: number;
+      decisionFactors: string[];
+    }> = [];
+    
+    const progress = currentThoughtNumber / totalThoughts;
+    
+    // Early stage decision strategies
+    if (progress < 0.3) {
+      strategies.push({
+        strategyName: 'Option Generation',
+        description: 'Focus on creating multiple alternatives before evaluation',
+        applicability: 9,
+        decisionFactors: ['Diversity of options', 'Creative potential', 'Breaking conventional thinking']
+      });
+      
+      strategies.push({
+        strategyName: 'Information Gathering',
+        description: 'Prioritize collecting relevant information before making decisions',
+        applicability: 8,
+        decisionFactors: ['Information quality', 'Source credibility', 'Relevance to goals']
+      });
+    }
+    // Middle stage decision strategies
+    else if (progress >= 0.3 && progress < 0.7) {
+      strategies.push({
+        strategyName: 'Weighted Criteria Analysis',
+        description: 'Evaluate options against multiple weighted criteria',
+        applicability: 9,
+        decisionFactors: ['Alignment with goals', 'Feasibility', 'Resource requirements', 'Risk level']
+      });
+      
+      strategies.push({
+        strategyName: 'Cost-Benefit Analysis',
+        description: 'Evaluate options based on their costs and benefits',
+        applicability: 8,
+        decisionFactors: ['Quantifiable benefits', 'Direct and indirect costs', 'Time horizon', 'Uncertainty']
+      });
+    }
+    // Late stage decision strategies
+    else {
+      strategies.push({
+        strategyName: 'Implementation Planning',
+        description: 'Focus on how to effectively implement the chosen solution',
+        applicability: 9,
+        decisionFactors: ['Resource availability', 'Timeline', 'Dependencies', 'Risk mitigation']
+      });
+      
+      strategies.push({
+        strategyName: 'Validation Testing',
+        description: 'Test decisions against potential scenarios and edge cases',
+        applicability: 8,
+        decisionFactors: ['Robustness', 'Edge case handling', 'Failure modes', 'Adaptability']
+      });
+    }
+    
+    // Task-specific decision strategies
+    switch (promptMetadata.taskType) {
+      case 'creative':
+        strategies.push({
+          strategyName: 'Novelty-Utility Balance',
+          description: 'Balance innovative aspects with practical utility',
+          applicability: 8,
+          decisionFactors: ['Originality', 'Practicality', 'Value creation', 'Implementation feasibility']
+        });
+        break;
+        
+      case 'analytical':
+        strategies.push({
+          strategyName: 'Evidence-Based Decision Making',
+          description: 'Base decisions on quality and weight of available evidence',
+          applicability: 9,
+          decisionFactors: ['Evidence quality', 'Statistical significance', 'Alternative explanations', 'Confidence levels']
+        });
+        break;
+        
+      case 'technical':
+        strategies.push({
+          strategyName: 'Trade-off Analysis',
+          description: 'Explicitly evaluate trade-offs between competing technical factors',
+          applicability: 9,
+          decisionFactors: ['Performance', 'Reliability', 'Maintainability', 'Scalability', 'Security']
+        });
+        break;
+    }
+    
+    return strategies.slice(0, 2); // Return top 2 strategies
+  }
+
+  /**
+   * Recommends mental models based on prompt metadata and phase
+   */
+  private recommendMentalModels(
+    promptMetadata: PromptMetadata,
+    phase?: 'Planning' | 'Analysis' | 'Execution' | 'Verification'
+  ): Array<{
+    modelName: string;
+    description: string;
+    applicability: number;
+    exampleApplication: string;
+  }> {
+    const models: Array<{
+      modelName: string;
+      description: string;
+      applicability: number;
+      exampleApplication: string;
+    }> = [];
+    
+    // General mental models
+    models.push({
+      modelName: 'Second-Order Thinking',
+      description: 'Considering the consequences of the consequences',
+      applicability: 8,
+      exampleApplication: 'When evaluating a solution, consider not just its immediate effects but also the subsequent effects those will cause'
+    });
+    
+    models.push({
+      modelName: 'Inversion',
+      description: 'Approaching problems backward by focusing on what to avoid',
+      applicability: 7,
+      exampleApplication: 'Instead of asking "How do I solve this problem?", ask "What would guarantee failure?"'
+    });
+    
+    models.push({
+      modelName: 'Opportunity Cost',
+      description: 'Considering what you give up by choosing one option over others',
+      applicability: 7,
+      exampleApplication: 'When choosing a solution approach, explicitly consider what alternative approaches you're giving up'
+    });
+    
+    // Phase-specific mental models
+    if (phase) {
+      switch (phase) {
+        case 'Planning':
+          models.push({
+            modelName: 'Map vs. Territory',
+            description: 'Recognizing that models and plans are simplifications of reality',
+            applicability: 8,
+            exampleApplication: 'When creating a plan, acknowledge its limitations and build in flexibility for unexpected developments'
+          });
+          break;
+          
+        case 'Analysis':
+          models.push({
+            modelName: 'Falsifiability',
+            description: 'Focusing on how hypotheses could be proven wrong',
+            applicability: 9,
+            exampleApplication: 'For each analytical conclusion, ask "What evidence would prove this wrong?" and actively seek that evidence'
+          });
+          break;
+          
+        case 'Execution':
+          models.push({
+            modelName: 'Feedback Loops',
+            description: 'Understanding how systems amplify or dampen changes through feedback',
+            applicability: 8,
+            exampleApplication: 'When implementing a solution, identify both positive and negative feedback mechanisms that will affect outcomes'
+          });
+          break;
+          
+        case 'Verification':
+          models.push({
+            modelName: 'Confirmation Bias',
+            description: 'Awareness of the tendency to favor information confirming existing beliefs',
+            applicability: 9,
+            exampleApplication: 'When verifying a solution, actively seek evidence that would disprove its effectiveness'
+          });
+          break;
+      }
+    }
+    
+    // Task-specific mental models
+    switch (promptMetadata.taskType) {
+      case 'creative':
+        models.push({
+          modelName: 'Combinatorial Thinking',
+          description: 'Creating new ideas by combining existing concepts in novel ways',
+          applicability: 9,
+          exampleApplication: 'Take concepts from different domains and combine them to generate innovative solutions'
+        });
+        break;
+        
+      case 'analytical':
+        models.push({
+          modelName: 'Probabilistic Thinking',
+          description: 'Reasoning in terms of probabilities rather than certainties',
+          applicability: 9,
+          exampleApplication: 'Express conclusions in terms of confidence levels rather than binary true/false statements'
+        });
+        break;
+        
+      case 'technical':
+        models.push({
+          modelName: 'Abstraction Laddering',
+          description: 'Moving up and down levels of abstraction to gain different perspectives',
+          applicability: 8,
+          exampleApplication: 'When designing a system, alternate between high-level architecture and low-level implementation details'
+        });
+        break;
+    }
+    
+    return models.slice(0, 3); // Return top 3 models
   }
 } 
