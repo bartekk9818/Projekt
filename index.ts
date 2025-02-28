@@ -568,59 +568,64 @@ class SequentialThinkingServer {
           }
           
           // Generate intelligence maximization recommendations
-          validatedInput.intelligenceRecommendations = this.intelligenceMaximizationModule.generateRecommendations(
-            promptMetadata,
-            validatedInput.thoughtNumber,
-            validatedInput.totalThoughts,
-            validatedInput.phase
-          );
+          if (promptMetadata) {
+            validatedInput.intelligenceRecommendations = this.intelligenceMaximizationModule.generateRecommendations(
+              promptMetadata,
+              validatedInput.thoughtNumber,
+              validatedInput.totalThoughts,
+              validatedInput.phase
+            );
+          }
           
           // Log intelligence maximization information
           console.error(chalk.cyan('\nIntelligence Maximization:'));
           
-          // Log recommended strategies
-          if (validatedInput.intelligenceRecommendations.strategies.length > 0) {
-            console.error(chalk.green('  Recommended Strategies:'));
-            validatedInput.intelligenceRecommendations.strategies.forEach(strategy => {
-              console.error(`    • ${strategy.strategyName}: ${strategy.description}`);
-              console.error(`      Reason: ${strategy.reasonForRecommendation}`);
-            });
-          }
-          
-          // Log recommended reasoning types
-          if (validatedInput.intelligenceRecommendations.reasoningTypes.length > 0) {
-            console.error(chalk.green('  Recommended Reasoning Types:'));
-            validatedInput.intelligenceRecommendations.reasoningTypes.forEach(reasoningType => {
-              console.error(`    • ${reasoningType.reasoningType}: ${reasoningType.description}`);
-            });
-          }
-          
-          // Log complexity estimation
-          const complexityEstimation = validatedInput.intelligenceRecommendations.complexityEstimation;
-          console.error(chalk.green('  Complexity Estimation:'));
-          console.error(`    Overall: ${complexityEstimation.overallComplexity}`);
-          console.error(`    Recommended Thoughts: ${complexityEstimation.recommendedThoughtCount}`);
-          
-          // Log focus areas
-          if (validatedInput.intelligenceRecommendations.focusAreas.length > 0) {
-            console.error(chalk.green('  Focus Areas:'));
-            validatedInput.intelligenceRecommendations.focusAreas.forEach(area => {
-              console.error(`    • ${area}`);
-            });
-          }
-          
-          // Log potential pitfalls
-          if (validatedInput.intelligenceRecommendations.potentialPitfalls.length > 0) {
-            console.error(chalk.yellow('  Potential Pitfalls:'));
-            validatedInput.intelligenceRecommendations.potentialPitfalls.forEach(pitfall => {
-              console.error(`    • ${pitfall}`);
-            });
-          }
-          
-          // Adjust totalThoughts based on complexity estimation if needed
-          if (complexityEstimation.recommendedThoughtCount > validatedInput.totalThoughts) {
-            validatedInput.totalThoughts = complexityEstimation.recommendedThoughtCount;
-            console.error(chalk.cyan(`  Adjusting total thoughts to ${validatedInput.totalThoughts} based on complexity estimation`));
+          // Only log if intelligenceRecommendations is defined
+          if (validatedInput.intelligenceRecommendations) {
+            // Log recommended strategies
+            if (validatedInput.intelligenceRecommendations.strategies.length > 0) {
+              console.error(chalk.green('  Recommended Strategies:'));
+              validatedInput.intelligenceRecommendations.strategies.forEach(strategy => {
+                console.error(`    • ${strategy.strategyName}: ${strategy.description}`);
+                console.error(`      Reason: ${strategy.reasonForRecommendation}`);
+              });
+            }
+            
+            // Log recommended reasoning types
+            if (validatedInput.intelligenceRecommendations.reasoningTypes.length > 0) {
+              console.error(chalk.green('  Recommended Reasoning Types:'));
+              validatedInput.intelligenceRecommendations.reasoningTypes.forEach(reasoningType => {
+                console.error(`    • ${reasoningType.reasoningType}: ${reasoningType.description}`);
+              });
+            }
+            
+            // Log complexity estimation
+            const complexityEstimation = validatedInput.intelligenceRecommendations.complexityEstimation;
+            console.error(chalk.green('  Complexity Estimation:'));
+            console.error(`    Overall: ${complexityEstimation.overallComplexity}`);
+            console.error(`    Recommended Thoughts: ${complexityEstimation.recommendedThoughtCount}`);
+            
+            // Log focus areas
+            if (validatedInput.intelligenceRecommendations.focusAreas.length > 0) {
+              console.error(chalk.green('  Focus Areas:'));
+              validatedInput.intelligenceRecommendations.focusAreas.forEach(area => {
+                console.error(`    • ${area}`);
+              });
+            }
+            
+            // Log potential pitfalls
+            if (validatedInput.intelligenceRecommendations.potentialPitfalls.length > 0) {
+              console.error(chalk.yellow('  Potential Pitfalls:'));
+              validatedInput.intelligenceRecommendations.potentialPitfalls.forEach(pitfall => {
+                console.error(`    • ${pitfall}`);
+              });
+            }
+            
+            // Adjust totalThoughts based on complexity estimation if needed
+            if (complexityEstimation.recommendedThoughtCount > validatedInput.totalThoughts) {
+              validatedInput.totalThoughts = complexityEstimation.recommendedThoughtCount;
+              console.error(chalk.cyan(`  Adjusting total thoughts to ${validatedInput.totalThoughts} based on complexity estimation`));
+            }
           }
         }
       }
@@ -689,9 +694,12 @@ class SequentialThinkingServer {
         }
         
         // Generate intelligence dashboard
+        // Get metadata and ensure it's not null
+        const metadata = this.promptContext.isInitialized() ? this.promptContext.getMetadata() || undefined : undefined;
+        
         const intelligenceDashboard = this.graphRenderer.generateIntelligenceDashboard(
           this.thoughtHistory,
-          this.promptContext.isInitialized() ? this.promptContext.getMetadata() : undefined,
+          metadata,
           validatedInput.intelligenceRecommendations
         );
         console.error(intelligenceDashboard);

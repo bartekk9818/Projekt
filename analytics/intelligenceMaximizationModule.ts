@@ -2366,7 +2366,7 @@ export class IntelligenceMaximizationModule {
       modelName: 'Opportunity Cost',
       description: 'Considering what you give up by choosing one option over others',
       applicability: 7,
-      exampleApplication: 'When choosing a solution approach, explicitly consider what alternative approaches you're giving up'
+      exampleApplication: 'When choosing a solution approach, explicitly consider what alternative approaches you\'re giving up'
     });
     
     // Phase-specific mental models
